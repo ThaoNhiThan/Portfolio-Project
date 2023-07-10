@@ -1,79 +1,79 @@
-Select *
-From [Portfolio Project]..['Covid Death$']
-order by 3,4
+SELECT                                              *
+FROM [Portfolio Project]..['Covid Death$']
+ORDER BY 3,4
 
 --Select *
 --From [Portfolio Project]..['Covid Vaccination$']
 --order by 3,4
 
 -- Select Data that we are going to be using
-Select Location, date, total_cases, new_cases, total_deaths, population
-From [Portfolio Project]..['Covid Death$']
-order by 1,2
+SELECT Location, date, total_cases, new_cases, total_deaths, population
+FROM [Portfolio Project]..['Covid Death$']
+ORDER BY 1,2
 -- Looking at Total Cases Vs Total Deaths
 -- Shows likelihood of dying if you contract covid in Australia
-Select Location, date, total_cases, total_deaths, (total_deaths/total_cases)*100 as DeathPercentage
-From [Portfolio Project]..['Covid Death$']
-Where location = 'Australia'
-order by 1,2
+SELECT Location, date, total_cases, total_deaths, (total_deaths/total_cases)*100 AS DeathPercentage
+FROM [Portfolio Project]..['Covid Death$']
+WHERE location = 'Australia'
+ORDER BY 1,2
 
 -- Looking at Total Cases vs Population
 -- Shows what percentage of population got Covid
-Select Location, date, total_cases, population, (total_cases/population)*100 as CasesPercentage
-From [Portfolio Project]..['Covid Death$']
+SELECT Location, date, total_cases, population, (total_cases/population)*100 AS CasesPercentage
+FROM [Portfolio Project]..['Covid Death$']
 --Where location = 'Australia'
-order by 1,2
+ORDER BY 1,2
 
 -- Looking at Countries with Highest Infection Rate compared to Population
-Select Location, Population, Max(total_cases) as HighestInfectionCount, Max((total_cases/population))*100 as CasesPercentage
-From [Portfolio Project]..['Covid Death$']
-Group by location, population
-order by CasesPercentage Desc
+SELECT Location, Population, Max(total_cases) AS HighestInfectionCount, Max((total_cases/population))*100 AS CasesPercentage
+FROM [Portfolio Project]..['Covid Death$']
+GROUP BY location, population
+ORDER BY CasesPercentage DESC
 
 -- Showing Countries with Highest Death Count per Population
-Select Location, Max(cast(total_deaths as int)) as TotalDeathCount
-From [Portfolio Project]..['Covid Death$']
-Where continent is not null
-Group by location
-order by TotalDeathCount Desc
+SELECT Location, Max(CAST(total_deaths AS int)) AS TotalDeathCount
+FROM [Portfolio Project]..['Covid Death$']
+WHERE continent is not null
+GROUP BY location
+ORDER BY TotalDeathCount DESC
 
 -- Let's break things down by continent
-Select continent, Max(cast(total_deaths as Int)) as TotalDeathCount
-From [Portfolio Project]..['Covid Death$']
-Where continent is not null
-Group by continent
-Order by TotalDeathCount Desc
+SELECT continent, MAX(CAST(total_deaths AS Int)) AS TotalDeathCount
+FROM [Portfolio Project]..['Covid Death$']
+WHERE continent is not null
+GROUP BY continent
+ORDER BY TotalDeathCount DESC
 
 -- Showing continents with highest death count in each continent
-Select continent, Max(cast(total_deaths as Int)) as TotalDeathCount
-From [Portfolio Project]..['Covid Death$']
-Where continent is not null
-Group by continent
-order by TotalDeathCount Desc
+SELECT continent, MAX(CAST(total_deaths AS Int)) AS TotalDeathCount
+FROM [Portfolio Project]..['Covid Death$']
+WHERE continent is not null
+GROUP BY continent
+ORDER BY TotalDeathCount DESC
 
 -- Global Numbers
-Select Sum(new_cases) as total_cases, Sum(cast(new_deaths as Int)) as total_deaths, Sum(cast(new_deaths as Int))/ Sum(new_cases)*100 as DeathPercentage
-From [Portfolio Project]..['Covid Death$']
-where continent is not null
+SELECT Sum(new_cases) AS total_cases, SUM(CAST(new_deaths AS Int)) AS total_deaths, SUM(CAST(new_deaths AS Int))/ Sum(new_cases)*100 AS DeathPercentage
+FROM [Portfolio Project]..['Covid Death$']
+WHERE continent is not null
 
-Select *
-From [Portfolio Project]..['Covid Vaccination$']
+SELECT *
+FROM [Portfolio Project]..['Covid Vaccination$']
 
 -- Looking at Total Population vs Total Tests
 
-Select dea.continent, dea.location,dea.date, dea.population, vac.total_tests,
-Sum(cast(vac.total_tests as bigint)) OVER (Partition by dea.Location Order by dea.location, dea.Date) as RollingPeopleDead
-From [Portfolio Project]..['Covid Death$'] dea
-Join [Portfolio Project]..['Covid Vaccination$'] vac
-On dea.location = vac.location
-and dea.date = vac.date
-Where dea.continent is not null
-Order by 2,3
+SELECT dea.continent, dea.location,dea.date, dea.population, vac.total_tests,
+SUM(CAST(vac.total_tests AS bigint)) OVER (Partition BY dea.Location ORDER BY dea.location, dea.Date) AS RollingPeopleDead
+FROM [Portfolio Project]..['Covid Death$'] dea
+JOIN [Portfolio Project]..['Covid Vaccination$'] vac
+ON dea.location = vac.location
+AND dea.date = vac.date
+WHERE dea.continent is not null
+ORDER BY 2,3
 
 -- Create Table
-Drop Table if exists PercentPopulationTested
+DROP TABLE IF EXISTS PercentPopulationTested
 
-Create Table PercentPopulationTested
+CREATE TABLE PercentPopulationTested
 (Continent nvarchar(255),
 Location nvarchar(255),
 Date datetime,
@@ -82,27 +82,27 @@ total_tests numeric,
 RollingPeopleTested numeric)
 
 
-Select dea.continent, dea.location,dea.date, dea.population, vac.total_tests,
-Sum(cast(vac.total_tests as bigint)) OVER (Partition by dea.Location Order by dea.location, dea.Date) as RollingPeopleTested
-From [Portfolio Project]..['Covid Death$'] dea
-Join [Portfolio Project]..['Covid Vaccination$'] vac
-On dea.location = vac.location
-and dea.date = vac.date
+SELECT dea.continent, dea.location,dea.date, dea.population, vac.total_tests,
+SUM(CAST(vac.total_tests AS bigint)) OVER (PARTITION BY dea.Location ORDER BY dea.location, dea.Date) AS RollingPeopleTested
+FROM [Portfolio Project]..['Covid Death$'] dea
+JOIN [Portfolio Project]..['Covid Vaccination$'] vac
+ON dea.location = vac.location
+AND dea.date = vac.date
 
 
 
-Select *, (RollingPeopleTested/Population)*100
-From PercentPopulationTested
+SELECT *, (RollingPeopleTested/Population)*100
+FROM PercentPopulationTested
 
 -- Creating View to store data for later Visualisation
-Create View PercentofPopulationTested as
-Select dea.continent, dea.location,dea.date, dea.population, vac.total_tests,
-Sum(cast(vac.total_tests as bigint)) OVER (Partition by dea.Location Order by dea.location, dea.Date) as RollingPeopleTested
-From [Portfolio Project]..['Covid Death$'] dea
-Join [Portfolio Project]..['Covid Vaccination$'] vac
-On dea.location = vac.location
-and dea.date = vac.date
-where dea.continent is not null
+CREATE VIEW PercentofPopulationTested AS
+SELECT dea.continent, dea.location,dea.date, dea.population, vac.total_tests,
+Sum(CAST(vac.total_tests AS bigint)) OVER (PARTITION BY dea.Location ORDER BY dea.location, dea.Date) AS RollingPeopleTested
+FROM [Portfolio Project]..['Covid Death$'] dea
+JOIN [Portfolio Project]..['Covid Vaccination$'] vac
+ON dea.location = vac.location
+AND dea.date = vac.date
+WHERE dea.continent is not null
 
-Select *
-From PercentofPopulationTested
+SELECT *
+FROM PercentofPopulationTested
