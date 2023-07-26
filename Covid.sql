@@ -1,4 +1,4 @@
-SELECT                                              *
+SELECT *                                             *
 FROM [Portfolio Project]..['Covid Death$']
 ORDER BY 3,4
 
